@@ -52,10 +52,10 @@ class Entrust
      *
      * @return bool
      */
-    public function can($permission, $requireAll = false)
+    public function may($permission, $requireAll = false)
     {
         if ($user = $this->user()) {
-            return $user->can($permission, $requireAll);
+            return $user->may($permission, $requireAll);
         }
 
         return false;
@@ -142,7 +142,7 @@ class Entrust
         $filterName .= '_'.substr(md5($route), 0, 6);
 
         $closure = function () use ($permissions, $result, $requireAll) {
-            $hasPerm = $this->can($permissions, $requireAll);
+            $hasPerm = $this->may($permissions, $requireAll);
 
             if (!$hasPerm) {
                 return empty($result) ? $this->app->abort(403) : $result;
@@ -179,7 +179,7 @@ class Entrust
 
         $closure = function () use ($roles, $permissions, $result, $requireAll) {
             $hasRole  = $this->hasRole($roles, $requireAll);
-            $hasPerms = $this->can($permissions, $requireAll);
+            $hasPerms = $this->may($permissions, $requireAll);
 
             if ($requireAll) {
                 $hasRolePerm = $hasRole && $hasPerms;
