@@ -10,6 +10,7 @@
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Cache\TaggableStore;
 
 trait EntrustRoleTrait
 {
@@ -18,27 +19,38 @@ trait EntrustRoleTrait
     {
         $rolePrimaryKey = $this->primaryKey;
         $cacheKey = 'entrust_permissions_for_role_'.$this->$rolePrimaryKey;
-        return Cache::tags(Config::get('entrust.permission_role_table'))->remember($cacheKey, Config::get('cache.ttl'), function () {
-            return $this->perms()->get();
-        });
-    }
+        
+		if(Cache::getStore() instanceof TaggableStore) {
+			return Cache::tags(Config::get('entrust.permission_role_table'))->remember($cacheKey, Config::get('cache.ttl'), function () {
+				return $this->perms()->get();
+			});
+		}
+		
+		return $this->perms()->get();
+	}
     public function save(array $options = [])
     {   //both inserts and updates
         $result = parent::save($options);
-        Cache::tags(Config::get('entrust.permission_role_table'))->flush();
-        return $result;
+		if(Cache::getStore() instanceof TaggableStore) {
+			Cache::tags(Config::get('entrust.permission_role_table'))->flush();
+        }
+		return $result;
     }
     public function delete(array $options = [])
     {   //soft or hard
         $result = parent::delete($options);
-        Cache::tags(Config::get('entrust.permission_role_table'))->flush();
-        return $result;
+		if(Cache::getStore() instanceof TaggableStore) {
+			Cache::tags(Config::get('entrust.permission_role_table'))->flush();
+        }
+		return $result;
     }
     public function restore()
     {   //soft delete undo's
         $result = parent::restore();
-        Cache::tags(Config::get('entrust.permission_role_table'))->flush();
-        return $result;
+		if(Cache::getStore() instanceof TaggableStore) {
+			Cache::tags(Config::get('entrust.permission_role_table'))->flush();
+        }
+		return $result;
     }
     
     /**

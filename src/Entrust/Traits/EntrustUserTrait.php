@@ -11,6 +11,7 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use InvalidArgumentException;
+use Illuminate\Cache\TaggableStore;
 
 trait EntrustUserTrait
 {
@@ -19,26 +20,40 @@ trait EntrustUserTrait
     {
         $userPrimaryKey = $this->primaryKey;
         $cacheKey = 'entrust_roles_for_user_'.$this->$userPrimaryKey;
-        return Cache::tags(Config::get('entrust.role_user_table'))->remember($cacheKey, Config::get('cache.ttl'), function () {
-            return $this->roles()->get();
-        });
+		
+		if(Cache::getStore() instanceof TaggableStore) {
+			return Cache::tags(Config::get('entrust.role_user_table'))->remember($cacheKey, Config::get('cache.ttl'), function () {
+				return $this->roles()->get();
+			});
+		}
+		
+		return $this->roles()->get();
     }
     public function save(array $options = [])
     {   //both inserts and updates
         $result = parent::save($options);
-        Cache::tags(Config::get('entrust.role_user_table'))->flush();
+		
+		if(Cache::getStore() instanceof TaggableStore) {
+			Cache::tags(Config::get('entrust.role_user_table'))->flush();
+		}
         return $result;
     }
     public function delete(array $options = [])
     {   //soft or hard
         $result = parent::delete($options);
-        Cache::tags(Config::get('entrust.role_user_table'))->flush();
+		
+		if(Cache::getStore() instanceof TaggableStore) {
+			Cache::tags(Config::get('entrust.role_user_table'))->flush();
+		}
         return $result;
     }
     public function restore()
     {   //soft delete undo's
         $result = parent::restore();
-        Cache::tags(Config::get('entrust.role_user_table'))->flush();
+		
+		if(Cache::getStore() instanceof TaggableStore) {
+			Cache::tags(Config::get('entrust.role_user_table'))->flush();
+		}
         return $result;
     }
     
